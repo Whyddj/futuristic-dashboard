@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ImageCompare } from "@/components/ImageCompare"
 
 interface VideoFrameProps {
   title: string
@@ -184,7 +185,7 @@ function MetricCard({
   unit = "%",
 }: {
   title: string
-  value: number
+  value: number | string
   icon: React.ElementType
   trend: "up" | "down" | "stable"
   color: string
@@ -256,17 +257,24 @@ function MetricCard({
 
 export default function SmokeRemovalModule() {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isFullScreen, setIsFullScreen] = useState(false)
+  const [selectedModel, setSelectedModel] = useState("aod-net")
+  const [enhancementLevel, setEnhancementLevel] = useState(75)
+  const [selectedResolution, setSelectedResolution] = useState("720p")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState(0)
   const [algorithm, setAlgorithm] = useState("default")
   const [smokeDensity, setSmokeDensity] = useState(65)
   const [detailEnhancement, setDetailEnhancement] = useState(50)
   const [comparisonMode, setComparisonMode] = useState("side-by-side")
-  const [smokeStrength, setSmokeStrength] = useState(65)
-  const [fps, setFps] = useState(30)
-  const [latency, setLatency] = useState(180)
-  const [processingLoad, setProcessingLoad] = useState(42)
+  const [smokeStrength, setSmokeStrength] = useState(0)
+  const [fps, setFps] = useState(0)
+  const [latency, setLatency] = useState(0)
+  const [processingLoad, setProcessingLoad] = useState(0)
 
   useEffect(() => {
+    if (!isProcessing) return;
+    
     const interval = setInterval(() => {
       // Randomly adjust values within reasonable ranges
       setSmokeStrength(Math.floor(Math.random() * 10) + 60) // 60-70%
@@ -276,7 +284,7 @@ export default function SmokeRemovalModule() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [isProcessing])
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying)
@@ -292,179 +300,239 @@ export default function SmokeRemovalModule() {
   }
 
   return (
-    <Card className="bg-slate-800/30 border-slate-700/50 backdrop-blur-sm">
-      <CardHeader className="border-b border-slate-700/50 pb-4">
-        <CardTitle className="text-slate-100">去烟增强模块演示</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-6 overflow-hidden">
-        <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            {/* Left video - Smoke input */}
-            <div className="flex flex-col items-center">
-              <div className="mb-2 text-sm font-medium text-slate-200">带烟原始输入</div>
-              <div className="w-full max-w-md mx-auto">
-                <VideoFrame
-                  title="烟雾视频输入"
-                  onPlayPause={handlePlayPause}
-                  onStepForward={handleStepForward}
-                  onROISelect={handleROISelect}
-                  isPlaying={isPlaying}
+    <div className="grid grid-cols-1 gap-6">
+      {/* 去烟算法效果模块 */}
+      <Card className="bg-slate-800/30 border-slate-700/50 backdrop-blur-sm">
+        <CardHeader className="border-b border-slate-700/50 pb-4">
+          <CardTitle className="text-slate-100">去烟算法效果</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-3">
+              <p className="text-slate-300 mb-4">
+                本项目采用改进的多尺度特征融合去烟网络，能够有效去除烟雾干扰，保留图像细节信息，提高后续目标检测的准确率。
+                通过下方的对比拖动条，可以直观查看去烟前后的效果对比。
+              </p>
+            </div>
+            
+            <div className="md:col-span-3">
+              <ImageCompare 
+                beforeSrc="/images/smoke_before.jpg" 
+                afterSrc="/images/smoke_after.jpg"
+                title="去烟效果对比"
+              />
+            </div>
+            
+            <div className="md:col-span-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MetricCard
+                  title="峰值信噪比"
+                  value={28.6}
+                  icon={Gauge}
+                  trend="up"
+                  color="blue"
+                  detail="比传统算法提升约3.2dB"
+                  unit="dB"
+                />
+                <MetricCard
+                  title="处理速度"
+                  value={12.4}
+                  icon={Zap}
+                  trend="up"
+                  color="green"
+                  detail="单帧处理时间，支持实时视频处理"
+                  unit="ms"
+                />
+                <MetricCard
+                  title="结构相似度"
+                  value={0.94}
+                  icon={BarChart3}
+                  trend="up"
+                  color="purple"
+                  detail="较高的SSIM表明保留了更多图像结构信息"
+                  unit=""
                 />
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Middle arrow */}
-            <div className="flex justify-center">
+      {/* 去烟增强模块演示 */}
+      <Card className="bg-slate-800/30 border-slate-700/50 backdrop-blur-sm">
+        <CardHeader className="border-b border-slate-700/50 pb-4">
+          <CardTitle className="text-slate-100">去烟增强模块演示</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 overflow-hidden">
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+              {/* Left video - Smoke input */}
               <div className="flex flex-col items-center">
-                <div className="mb-4">
-                  <Select value={algorithm} onValueChange={setAlgorithm}>
-                    <SelectTrigger className="w-[200px] bg-slate-800 border-slate-700 text-slate-100">
-                      <SelectValue placeholder="选择去烟算法" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="default" className="text-slate-100 hover:bg-slate-700">基础去烟</SelectItem>
-                      <SelectItem value="dehazenet" className="text-slate-100 hover:bg-slate-700">DehazeNet去烟</SelectItem>
-                      <SelectItem value="aod-net" className="text-slate-100 hover:bg-slate-700">AOD-Net增强</SelectItem>
-                      <SelectItem value="physics" className="text-slate-100 hover:bg-slate-700">物理模型去烟</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <ProcessingArrow />
-                <div className="mt-4 flex flex-col gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/30" 
-                    onClick={() => setIsProcessing(!isProcessing)}
-                  >
-                    {isProcessing ? "暂停处理" : "开始处理"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right video - Processed output */}
-            <div className="flex flex-col items-center">
-              <div className="mb-2 text-sm font-medium text-slate-200">去烟后输出</div>
-              <div className="w-full max-w-md mx-auto">
-                <VideoFrame
-                  title="去烟视频输出"
-                  isProcessing={isProcessing}
-                  onPlayPause={handlePlayPause}
-                  onStepForward={handleStepForward}
-                  onROISelect={handleROISelect}
-                  isPlaying={isPlaying}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Parameter controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-sm font-medium text-slate-200 mb-3">处理参数</div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="smoke-density" className="text-xs text-slate-300">烟雾密度估计</Label>
-                      <span className="text-xs text-slate-300">{smokeDensity}%</span>
-                    </div>
-                    <Slider
-                      id="smoke-density"
-                      value={[smokeDensity]}
-                      onValueChange={(value) => setSmokeDensity(value[0])}
-                      max={100}
-                      step={1}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="detail-enhancement" className="text-xs text-slate-300">细节增强强度</Label>
-                      <span className="text-xs text-slate-300">{detailEnhancement}%</span>
-                    </div>
-                    <Slider
-                      id="detail-enhancement"
-                      value={[detailEnhancement]}
-                      onValueChange={(value) => setDetailEnhancement(value[0])}
-                      max={100}
-                      step={1}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-sm font-medium text-slate-200 mb-3">显示选项</div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-300">对比模式</Label>
-                    <ToggleGroup type="single" variant="outline" value={comparisonMode} onValueChange={(value) => value && setComparisonMode(value)} className="justify-start">
-                      <ToggleGroupItem value="side-by-side" className="text-xs text-slate-100 bg-slate-700/50 data-[state=on]:bg-orange-500/40 data-[state=on]:text-white data-[state=on]:font-medium">
-                        并排显示
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="split" className="text-xs text-slate-100 bg-slate-700/50 data-[state=on]:bg-orange-500/40 data-[state=on]:text-white data-[state=on]:font-medium">
-                        分屏对比
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="overlay" className="text-xs text-slate-100 bg-slate-700/50 data-[state=on]:bg-orange-500/40 data-[state=on]:text-white data-[state=on]:font-medium">
-                        叠加对比
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-sm font-medium text-slate-200 mb-3">性能指标</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <MetricCard
-                    title="帧率"
-                    value={fps}
-                    icon={Clock}
-                    trend="stable"
-                    color="blue"
-                    detail="处理速度稳定"
-                    unit=" FPS"
-                  />
-                  <MetricCard
-                    title="处理延迟"
-                    value={latency}
-                    icon={Zap}
-                    trend="down"
-                    color="green"
-                    detail="延迟降低 12%"
-                    unit=" ms"
+                <div className="mb-2 text-sm font-medium text-slate-200">带烟原始输入</div>
+                <div className="w-full max-w-md mx-auto">
+                  <VideoFrame
+                    title="烟雾视频输入"
+                    onPlayPause={handlePlayPause}
+                    onStepForward={handleStepForward}
+                    onROISelect={handleROISelect}
+                    isPlaying={isPlaying}
                   />
                 </div>
               </div>
 
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-sm font-medium text-slate-200 mb-3">去烟强度</div>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-300">当前强度: {smokeStrength}%</span>
-                    <span className="text-xs text-slate-300">处理负载: {processingLoad}%</span>
+              {/* Middle arrow */}
+              <div className="flex justify-center">
+                <div className="flex flex-col items-center">
+                  <div className="mb-4">
+                    <Select value={algorithm} onValueChange={setAlgorithm}>
+                      <SelectTrigger className="w-[200px] bg-slate-800 border-slate-700 text-slate-100">
+                        <SelectValue placeholder="选择去烟算法" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="default" className="text-slate-100 hover:bg-slate-700">基础去烟</SelectItem>
+                        <SelectItem value="dehazenet" className="text-slate-100 hover:bg-slate-700">Cycle GAN去烟</SelectItem>
+                        <SelectItem value="aod-net" className="text-slate-100 hover:bg-slate-700">AOD-Net增强</SelectItem>
+                        <SelectItem value="physics" className="text-slate-100 hover:bg-slate-700">物理模型去烟</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-orange-500 to-red-500"
-                      style={{ width: `${smokeStrength}%` }}
+                  <ProcessingArrow />
+                  <div className="mt-4 flex flex-col gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/30" 
+                      onClick={() => setIsProcessing(!isProcessing)}
+                    >
+                      {isProcessing ? "暂停处理" : "开始处理"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right video - Processed output */}
+              <div className="flex flex-col items-center">
+                <div className="mb-2 text-sm font-medium text-slate-200">去烟后输出</div>
+                <div className="w-full max-w-md mx-auto">
+                  <VideoFrame
+                    title="去烟视频输出"
+                    isProcessing={isProcessing}
+                    onPlayPause={handlePlayPause}
+                    onStepForward={handleStepForward}
+                    onROISelect={handleROISelect}
+                    isPlaying={isPlaying}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Parameter controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="text-sm font-medium text-slate-200 mb-3">处理参数</div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <Label htmlFor="smoke-density" className="text-xs text-slate-300">烟雾密度估计</Label>
+                        <span className="text-xs text-slate-300">{smokeDensity}%</span>
+                      </div>
+                      <Slider
+                        id="smoke-density"
+                        value={[smokeDensity]}
+                        onValueChange={(value) => setSmokeDensity(value[0])}
+                        max={100}
+                        step={1}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <Label htmlFor="detail-enhancement" className="text-xs text-slate-300">细节增强强度</Label>
+                        <span className="text-xs text-slate-300">{detailEnhancement}%</span>
+                      </div>
+                      <Slider
+                        id="detail-enhancement"
+                        value={[detailEnhancement]}
+                        onValueChange={(value) => setDetailEnhancement(value[0])}
+                        max={100}
+                        step={1}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="text-sm font-medium text-slate-200 mb-3">显示选项</div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-slate-300">对比模式</Label>
+                      <ToggleGroup type="single" variant="outline" value={comparisonMode} onValueChange={(value) => value && setComparisonMode(value)} className="justify-start">
+                        <ToggleGroupItem value="side-by-side" className="text-xs text-slate-100 bg-slate-700/50 data-[state=on]:bg-orange-500/40 data-[state=on]:text-white data-[state=on]:font-medium">
+                          并排显示
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="split" className="text-xs text-slate-100 bg-slate-700/50 data-[state=on]:bg-orange-500/40 data-[state=on]:text-white data-[state=on]:font-medium">
+                          分屏对比
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="overlay" className="text-xs text-slate-100 bg-slate-700/50 data-[state=on]:bg-orange-500/40 data-[state=on]:text-white data-[state=on]:font-medium">
+                          叠加对比
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="text-sm font-medium text-slate-200 mb-3">性能指标</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <MetricCard
+                      title="帧率"
+                      value={isProcessing ? fps : "-"}
+                      icon={Clock}
+                      trend="stable"
+                      color="blue"
+                      detail={isProcessing ? "处理速度稳定" : "尚未开始处理"}
+                      unit={isProcessing ? " FPS" : "%"}
+                    />
+                    <MetricCard
+                      title="处理延迟"
+                      value={isProcessing ? latency : "-"}
+                      icon={Zap}
+                      trend="down"
+                      color="green"
+                      detail={isProcessing ? "延迟降低 12%" : "尚未开始处理"}
+                      unit={isProcessing ? " ms" : "%"}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>最低</span>
-                    <span>适中</span>
-                    <span>最高</span>
+                </div>
+
+                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                  <div className="text-sm font-medium text-slate-200 mb-3">去烟强度</div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-xs text-slate-300">当前强度: {isProcessing ? `${smokeStrength}%` : "-%"}</span>
+                      <span className="text-xs text-slate-300">处理负载: {isProcessing ? `${processingLoad}%` : "-%"}</span>
+                    </div>
+                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-orange-500 to-red-500"
+                        style={{ width: isProcessing ? `${smokeStrength}%` : "0%" }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-400">
+                      <span>最低</span>
+                      <span>适中</span>
+                      <span>最高</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   )
 } 

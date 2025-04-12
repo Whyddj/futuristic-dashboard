@@ -1,0 +1,11 @@
+暂时使用以下公开可用的图片链接作为去烟对比的示例:
+
+烟雾环境图片 (smoke_before.jpg):
+https://i.imgur.com/EByGXxy.jpg
+
+去烟后图片 (smoke_after.jpg):
+https://i.imgur.com/gH49Lyt.jpg
+
+请将上述链接中的图片保存为对应文件名并放置在本目录。
+
+注意: 这些只是临时占位图像，仅供界面演示使用。实际应用中应当替换为真实的去烟算法处理前后的图像对。 
